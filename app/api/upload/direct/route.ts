@@ -20,17 +20,6 @@ export async function POST(request: NextRequest) {
   let title = ''
 
   const contentType = request.headers.get('content-type') ?? ''
-  const contentLength = request.headers.get('content-length') ?? '0'
-  const allHeaders: Record<string, string> = {}
-  request.headers.forEach((v, k) => { allHeaders[k] = v })
-
-  // Debug: return headers if no content
-  if (contentLength === '0' && !request.body) {
-    return Response.json({
-      error: 'No body received',
-      debug: { contentType, contentLength, headers: allHeaders, method: request.method }
-    }, { status: 422 })
-  }
 
   if (contentType.includes('multipart/form-data')) {
     // ── Form upload ──────────────────────────────────────────
@@ -56,7 +45,7 @@ export async function POST(request: NextRequest) {
     fileName = file.name || 'Untitled'
     fileType = file.type || 'video/mp4'
     fileSize = file.size
-    title = (formData.get('title') as string) || ''
+    title = (formData.get('title') as string) || (formData.get('name') as string) || ''
   } else {
     // ── Raw binary body (Shortcuts "File" mode) ──────────────
     const body = await request.arrayBuffer()
