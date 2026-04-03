@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     fileSize = body.byteLength
     fileType = contentType || 'video/mp4'
     // Get title from header, query param, or Content-Disposition
-    title = request.headers.get('x-title') ?? request.headers.get('x-filename') ?? request.nextUrl.searchParams.get('title') ?? ''
+    title = request.headers.get('name') ?? request.headers.get('x-title') ?? request.headers.get('x-filename') ?? request.nextUrl.searchParams.get('title') ?? ''
     const disposition = request.headers.get('content-disposition') ?? ''
     const filenameMatch = disposition.match(/filename[*]?=(?:UTF-8''|")?([^";]+)"?/)
     fileName = filenameMatch?.[1] ?? request.nextUrl.searchParams.get('filename') ?? 'iPhone Video'
