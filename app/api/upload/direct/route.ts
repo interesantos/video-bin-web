@@ -21,9 +21,17 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Expected multipart/form-data' }, { status: 400 })
   }
 
-  const file = formData.get('file') as File | null
-  if (!file || file.size === 0) {
-    return Response.json({ error: 'Missing file' }, { status: 422 })
+  // Find the first File entry — Shortcuts may send it under any field name
+  let file: File | null = null
+  const debugKeys: string[] = []
+  for (const [key, value] of formData.entries()) {
+    debugKeys.push(`${key}=${value instanceof File ? `File(${value.name}, ${value.size}b, ${value.type})` : String(value).slice(0, 50)}`)
+    if (!file && value instanceof File && value.size > 0) {
+      file = value
+    }
+  }
+  if (!file) {
+    return Response.json({ error: 'Missing file', debug: debugKeys }, { status: 422 })
   }
 
   if (file.size > MAX_UPLOAD_SIZE_BYTES) {
