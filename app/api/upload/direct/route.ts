@@ -63,10 +63,16 @@ export async function POST(request: NextRequest) {
     fileSize = body.byteLength
     fileType = contentType || 'video/mp4'
     // Get title from header, query param, or Content-Disposition
-    title = request.headers.get('name') ?? request.headers.get('x-title') ?? request.headers.get('x-filename') ?? request.nextUrl.searchParams.get('title') ?? ''
-    const disposition = request.headers.get('content-disposition') ?? ''
-    const filenameMatch = disposition.match(/filename[*]?=(?:UTF-8''|")?([^";]+)"?/)
-    fileName = filenameMatch?.[1] ?? request.nextUrl.searchParams.get('filename') ?? 'iPhone Video'
+    // Shortcuts sends filename as a header key with empty value (e.g. "img_8749": "")
+    // Find it by looking for non-standard headers with empty values
+    const knownHeaders = new Set(['accept', 'accept-encoding', 'accept-language', 'content-length', 'content-type', 'host', 'priority', 'user-agent', 'via', 'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-port', 'x-forwarded-proto', 'connection', 'cache-control', 'pragma', 'cookie', 'authorization', 'referer', 'origin'])
+    for (const [key, value] of request.headers.entries()) {
+      if (!knownHeaders.has(key) && value === '') {
+        fileName = key
+        break
+      }
+    }
+    title = request.headers.get('x-title') ?? request.nextUrl.searchParams.get('title') ?? ''
     if (!title) title = decodeURIComponent(fileName)
   }
 
