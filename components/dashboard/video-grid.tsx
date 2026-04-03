@@ -5,6 +5,35 @@ import { VideoCard } from './video-card'
 import { EmptyState } from './empty-state'
 import { UploadButton } from './upload-button'
 import { useVideos } from '@/hooks/useVideos'
+import type { Video } from '@/lib/types'
+
+/**
+ * Extract date from video title (e.g. "3 Apr 2026 at 14:03" → "3 Apr")
+ * Falls back to created_at date if title doesn't contain a recognizable date.
+ */
+function getDayLabel(video: Video): string {
+  // Match patterns like "3 Apr 2026" or "3 Apr"
+  const match = video.title.match(/(\d{1,2}\s+\w{3})/)
+  if (match) return match[1]
+  // Fallback: use created_at
+  const d = new Date(video.created_at)
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
+function groupByDay(videos: Video[]): { label: string; videos: Video[] }[] {
+  const groups: { label: string; videos: Video[] }[] = []
+  let currentLabel = ''
+  for (const video of videos) {
+    const label = getDayLabel(video)
+    if (label !== currentLabel) {
+      groups.push({ label, videos: [video] })
+      currentLabel = label
+    } else {
+      groups[groups.length - 1].videos.push(video)
+    }
+  }
+  return groups
+}
 
 function SkeletonCard() {
   return (
@@ -73,9 +102,19 @@ export function VideoGrid({ onDataChange }: VideoGridProps) {
       ) : videos.length === 0 ? (
         <EmptyState onUploadClick={scrollToUpload} />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {videos.map((video) => (
-            <VideoCard key={video.id} video={video} onDelete={handleDelete} />
+        <div className="space-y-6">
+          {groupByDay(videos).map(({ label, videos: dayVideos }) => (
+            <div key={label}>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-sm font-medium text-foreground/60">{label}</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {dayVideos.map((video) => (
+                  <VideoCard key={video.id} video={video} onDelete={handleDelete} />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}

@@ -88,7 +88,7 @@ export function VideoCard({ video, onDelete }: VideoCardProps) {
       >
         {/* Thumbnail */}
         <div
-          className="aspect-[9/16] w-full"
+          className="aspect-[9/16] w-full overflow-hidden"
           style={{
             background: `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`,
           }}
@@ -98,7 +98,7 @@ export function VideoCard({ video, onDelete }: VideoCardProps) {
             <img
               src={video.thumbnail_url}
               alt={video.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover scale-[1.20]"
             />
           )}
           {/* Rendering overlay */}
