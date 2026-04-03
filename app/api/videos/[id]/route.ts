@@ -1,5 +1,6 @@
 import { type NextRequest } from 'next/server'
 import { getVideo, updateVideo, deleteVideo } from '@/lib/directus'
+import { deleteSource } from '@/lib/shotstack'
 import { UpdateVideoSchema } from '@/lib/schemas'
 
 export async function GET(
@@ -45,9 +46,23 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const deleted = await deleteVideo(id)
-  if (!deleted) {
+  const video = await getVideo(id)
+  if (!video) {
     return Response.json({ error: 'Video not found' }, { status: 404 })
   }
+
+  // Delete Directus record first
+  const deleted = await deleteVideo(id)
+  if (!deleted) {
+    return Response.json({ error: 'Failed to delete video' }, { status: 500 })
+  }
+
+  // Clean up Shotstack source files (background, non-blocking)
+  if (video.ingest_id) {
+    deleteSource(video.ingest_id).catch((err) =>
+      console.error('Failed to delete Shotstack source:', err)
+    )
+  }
+
   return new Response(null, { status: 204 })
 }

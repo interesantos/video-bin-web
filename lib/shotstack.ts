@@ -123,6 +123,13 @@ export async function getAssets(renderId: string): Promise<ShotstackAssetsRespon
   return shotFetch<ShotstackAssetsResponse>(serveUrl(`/assets/render/${renderId}`))
 }
 
+export async function deleteServeAsset(assetId: string): Promise<void> {
+  await fetch(serveUrl(`/assets/${assetId}`), {
+    method: 'DELETE',
+    headers,
+  })
+}
+
 // ── Ingest API ──────────────────────────────────────────────────────────────
 
 export interface ShotstackSourceAttributes {
@@ -178,6 +185,13 @@ export async function ingestSource(url: string): Promise<ShotstackSourceResponse
 
 export async function getSource(id: string): Promise<ShotstackSourceResponse> {
   return shotFetch<ShotstackSourceResponse>(ingestUrl(`/sources/${id}`))
+}
+
+export async function deleteSource(id: string): Promise<void> {
+  await fetch(ingestUrl(`/sources/${id}`), {
+    method: 'DELETE',
+    headers,
+  })
 }
 
 // ── Direct Upload ──────────────────────────────────────────────────────────
