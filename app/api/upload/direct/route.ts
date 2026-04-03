@@ -20,6 +20,17 @@ export async function POST(request: NextRequest) {
   let title = ''
 
   const contentType = request.headers.get('content-type') ?? ''
+  const contentLength = request.headers.get('content-length') ?? '0'
+  const allHeaders: Record<string, string> = {}
+  request.headers.forEach((v, k) => { allHeaders[k] = v })
+
+  // Debug: return headers if no content
+  if (contentLength === '0' && !request.body) {
+    return Response.json({
+      error: 'No body received',
+      debug: { contentType, contentLength, headers: allHeaders, method: request.method }
+    }, { status: 422 })
+  }
 
   if (contentType.includes('multipart/form-data')) {
     // ── Form upload ──────────────────────────────────────────
