@@ -18,17 +18,25 @@ function SkeletonCard() {
   )
 }
 
-export function VideoGrid() {
+interface VideoGridProps {
+  onDataChange?: () => void
+}
+
+export function VideoGrid({ onDataChange }: VideoGridProps) {
   const { videos, isLoading, error, refresh } = useVideos()
   const uploadRef = useRef<HTMLDivElement>(null)
 
+  const handleRefresh = useCallback(() => {
+    refresh()
+    onDataChange?.()
+  }, [refresh, onDataChange])
+
   const handleDelete = useCallback(
     (id: string) => {
-      // Optimistic: refresh to sync with server
-      refresh()
+      handleRefresh()
       void id
     },
-    [refresh]
+    [handleRefresh]
   )
 
   const scrollToUpload = useCallback(() => {
@@ -53,7 +61,7 @@ export function VideoGrid() {
   return (
     <div className="space-y-5">
       <div ref={uploadRef}>
-        <UploadButton onSuccess={refresh} />
+        <UploadButton onSuccess={handleRefresh} />
       </div>
 
       {isLoading ? (

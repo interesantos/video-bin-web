@@ -1,10 +1,19 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useStorage } from '@/hooks/useStorage'
 import { cn } from '@/lib/utils'
 
-export function StorageIndicator() {
-  const { usage, isLoading } = useStorage()
+interface StorageIndicatorProps {
+  refreshKey?: number
+}
+
+export function StorageIndicator({ refreshKey }: StorageIndicatorProps) {
+  const { usage, isLoading, refresh } = useStorage()
+
+  useEffect(() => {
+    if (refreshKey) refresh()
+  }, [refreshKey, refresh])
 
   if (isLoading || !usage) {
     return <div className="h-1.5 w-24 rounded-full bg-surface-overlay animate-skeleton" />

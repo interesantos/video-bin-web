@@ -2,7 +2,7 @@
 
 # Git
 
-- **Repo**: `interesantos/video-bin` on GitHub.
+- **Repo**: `interesantos/video-bin-web` on GitHub.
 - **Pushing**: Use `git push` via Bash.
 
 # Project Stack

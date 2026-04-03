@@ -1,7 +1,11 @@
 import Link from 'next/link'
 import { StorageIndicator } from './storage-indicator'
 
-export function Header() {
+interface HeaderProps {
+  refreshKey?: number
+}
+
+export function Header({ refreshKey }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 bg-surface border-b border-border">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
@@ -10,7 +14,7 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <StorageIndicator />
+          <StorageIndicator refreshKey={refreshKey} />
           <Link
             href="/studio"
             className="text-sm font-medium text-brand-600 hover:text-brand-700 transition-colors"
