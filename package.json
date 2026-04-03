@@ -1,5 +1,5 @@
 {
-  "name": "video-box",
+  "name": "video-bin",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@directus/sdk": "^18.0.3",
+    "@shotstack/shotstack-studio": "^2.4.4",
     "next": "16.2.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
