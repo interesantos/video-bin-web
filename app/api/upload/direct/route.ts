@@ -21,12 +21,6 @@ export async function POST(request: NextRequest) {
 
   const contentType = request.headers.get('content-type') ?? ''
 
-  // Debug: log all headers and query params
-  const debugHeaders: Record<string, string> = {}
-  request.headers.forEach((v, k) => { debugHeaders[k] = v.slice(0, 200) })
-  const debugQuery = Object.fromEntries(request.nextUrl.searchParams.entries())
-  console.log('UPLOAD DEBUG:', JSON.stringify({ headers: debugHeaders, query: debugQuery }))
-
   if (contentType.includes('multipart/form-data')) {
     // ── Form upload ──────────────────────────────────────────
     let formData: FormData
