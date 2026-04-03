@@ -71,6 +71,33 @@ export async function getRenderStatus(renderId: string): Promise<ShotstackRender
   return shotFetch<ShotstackRenderStatus>(editUrl(`/render/${renderId}`))
 }
 
+/**
+ * Submit a lightweight render to extract a single frame as a JPG thumbnail.
+ * Uses the Edit API since the Ingest API only supports video renditions.
+ */
+export async function submitThumbnailRender(
+  videoUrl: string
+): Promise<ShotstackRenderResponse> {
+  return shotFetch<ShotstackRenderResponse>(editUrl('/render'), {
+    method: 'POST',
+    body: JSON.stringify({
+      timeline: {
+        tracks: [{
+          clips: [{
+            asset: { type: 'video', src: videoUrl, trim: 1 },
+            start: 0,
+            length: 1,
+          }],
+        }],
+      },
+      output: {
+        format: 'jpg',
+        size: { width: 360, height: 640 },
+      },
+    }),
+  })
+}
+
 // ── Serve API ───────────────────────────────────────────────────────────────
 
 export interface ShotstackAsset {
@@ -143,12 +170,6 @@ export async function ingestSource(url: string): Promise<ShotstackSourceResponse
             fit: 'contain',
             filename: 'proxy',
           },
-          {
-            format: 'jpg',
-            resolution: 'preview',
-            fit: 'contain',
-            filename: 'thumbnail',
-          },
         ],
       },
     }),
@@ -188,12 +209,6 @@ export async function createUpload(): Promise<ShotstackUploadResponse> {
             resolution: 'preview',
             fit: 'contain',
             filename: 'proxy',
-          },
-          {
-            format: 'jpg',
-            resolution: 'preview',
-            fit: 'contain',
-            filename: 'thumbnail',
           },
         ],
       },

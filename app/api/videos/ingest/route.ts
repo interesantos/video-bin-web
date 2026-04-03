@@ -51,15 +51,11 @@ export async function POST(request: NextRequest) {
         updates.source_url = attrs.source
       }
 
-      // Find ready renditions
+      // Find ready proxy rendition
       const renditions = attrs.outputs?.renditions ?? []
-      const readyProxy = renditions.find((r) => r.status === 'ready' && r.url && r.url.endsWith('.mp4'))
+      const readyProxy = renditions.find((r) => r.status === 'ready' && r.url)
       if (readyProxy?.url) {
         updates.proxy_url = readyProxy.url
-      }
-      const readyThumb = renditions.find((r) => r.status === 'ready' && r.url && r.url.endsWith('.jpg'))
-      if (readyThumb?.url) {
-        updates.thumbnail_url = readyThumb.url
       }
 
       if (Object.keys(updates).length) {

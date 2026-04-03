@@ -1,6 +1,6 @@
 import { type NextRequest } from 'next/server'
 import { createVideo, updateVideo } from '@/lib/directus'
-import { createUpload, getSource, ingestSource } from '@/lib/shotstack'
+import { createUpload, getSource, ingestSource, submitThumbnailRender, getRenderStatus } from '@/lib/shotstack'
 import { MAX_UPLOAD_SIZE_BYTES } from '@/lib/constants'
 
 /**
@@ -104,16 +104,12 @@ export async function POST(request: NextRequest) {
 
   // 3. Poll Shotstack for the source URL + thumbnail (retry up to ~20s)
   let sourceUrl: string | undefined
-  let thumbnailUrl: string | undefined
   for (let i = 0; i < 10; i++) {
     try {
       const source = await getSource(ingestId)
       const attrs = source.data.attributes
       if (attrs.status === 'ready' && attrs.source) {
         sourceUrl = attrs.source
-        const renditions = attrs.outputs?.renditions ?? []
-        const thumb = renditions.find((r) => r.status === 'ready' && r.url && r.url.endsWith('.jpg'))
-        if (thumb?.url) thumbnailUrl = thumb.url
         break
       }
       if (attrs.status === 'failed') break
@@ -126,7 +122,6 @@ export async function POST(request: NextRequest) {
 
   const updates: Record<string, string> = {}
   if (sourceUrl) updates.source_url = sourceUrl
-  if (thumbnailUrl) updates.thumbnail_url = thumbnailUrl
   updates.ingest_id = ingestId
   await updateVideo(video.id, updates as Parameters<typeof updateVideo>[1])
 
@@ -139,6 +134,25 @@ export async function POST(request: NextRequest) {
         } catch { /* non-blocking */ }
       })
       .catch((err) => console.error('Proxy ingest failed:', err))
+
+    // 6. Generate thumbnail via Edit API (background)
+    submitThumbnailRender(sourceUrl)
+      .then(async (renderRes) => {
+        const renderId = renderRes.response.id
+        // Poll for completion (up to ~30s)
+        for (let i = 0; i < 15; i++) {
+          await new Promise((r) => setTimeout(r, 2000))
+          try {
+            const status = await getRenderStatus(renderId)
+            if (status.response.status === 'done' && status.response.url) {
+              await updateVideo(video.id, { thumbnail_url: status.response.url } as Parameters<typeof updateVideo>[1])
+              return
+            }
+            if (status.response.status === 'failed') return
+          } catch { /* retry */ }
+        }
+      })
+      .catch((err) => console.error('Thumbnail render failed:', err))
   }
 
   return Response.json({ id: video.id, title: video.title, status: video.status }, { status: 201 })
