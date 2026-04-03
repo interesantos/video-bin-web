@@ -6,42 +6,71 @@ import { MAX_UPLOAD_SIZE_BYTES } from '@/lib/constants'
 /**
  * POST /api/upload/direct
  *
- * Single-request upload via multipart/form-data.
- * Designed for iPhone Shortcuts and simple HTTP clients.
+ * Single-request upload for iPhone Shortcuts and simple HTTP clients.
  *
- * Form fields:
- *   - file: video file (required)
- *   - title: string (optional, defaults to filename)
+ * Accepts two formats:
+ *   1. multipart/form-data with field "file" (+ optional "title")
+ *   2. Raw binary body (any content-type with video data)
  */
 export async function POST(request: NextRequest) {
-  let formData: FormData
-  try {
-    formData = await request.formData()
-  } catch {
-    return Response.json({ error: 'Expected multipart/form-data' }, { status: 400 })
-  }
+  let fileBuffer: ArrayBuffer
+  let fileName = 'Untitled'
+  let fileType = 'video/mp4'
+  let fileSize = 0
+  let title = ''
 
-  // Find the first File entry — Shortcuts may send it under any field name
-  let file: File | null = null
-  const debugKeys: string[] = []
-  for (const [key, value] of formData.entries()) {
-    debugKeys.push(`${key}=${value instanceof File ? `File(${value.name}, ${value.size}b, ${value.type})` : String(value).slice(0, 50)}`)
-    if (!file && value instanceof File && value.size > 0) {
-      file = value
+  const contentType = request.headers.get('content-type') ?? ''
+
+  if (contentType.includes('multipart/form-data')) {
+    // ── Form upload ──────────────────────────────────────────
+    let formData: FormData
+    try {
+      formData = await request.formData()
+    } catch {
+      return Response.json({ error: 'Invalid form data' }, { status: 400 })
     }
-  }
-  if (!file) {
-    return Response.json({ error: 'Missing file', debug: debugKeys }, { status: 422 })
+
+    let file: File | null = null
+    for (const [, value] of formData.entries()) {
+      if (value instanceof File && value.size > 0) {
+        file = value
+        break
+      }
+    }
+    if (!file) {
+      return Response.json({ error: 'Missing file in form data' }, { status: 422 })
+    }
+
+    fileBuffer = await file.arrayBuffer()
+    fileName = file.name || 'Untitled'
+    fileType = file.type || 'video/mp4'
+    fileSize = file.size
+    title = (formData.get('title') as string) || ''
+  } else {
+    // ── Raw binary body (Shortcuts "File" mode) ──────────────
+    const body = await request.arrayBuffer()
+    if (!body || body.byteLength === 0) {
+      return Response.json({ error: 'Empty request body' }, { status: 422 })
+    }
+
+    fileBuffer = body
+    fileSize = body.byteLength
+    fileType = contentType || 'video/mp4'
+    // Try to get title from query param or header
+    title = request.nextUrl.searchParams.get('title') ?? ''
+    fileName = request.nextUrl.searchParams.get('filename') ?? 'iPhone Video'
   }
 
-  if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+  if (!title) {
+    title = fileName.replace(/\.[^.]+$/, '') || 'Untitled'
+  }
+
+  if (fileSize > MAX_UPLOAD_SIZE_BYTES) {
     return Response.json(
       { error: `File too large. Maximum size is ${MAX_UPLOAD_SIZE_BYTES / (1024 ** 3)} GB` },
       { status: 413 }
     )
   }
-
-  const title = (formData.get('title') as string) || file.name.replace(/\.[^.]+$/, '') || 'Untitled'
 
   // 1. Get signed upload URL from Shotstack
   const upload = await createUpload()
@@ -49,14 +78,13 @@ export async function POST(request: NextRequest) {
   const ingestId = upload.data.id
 
   // 2. PUT the file to Shotstack S3
-  const buffer = await file.arrayBuffer()
   const putRes = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
-      'Content-Type': file.type || 'video/mp4',
+      'Content-Type': fileType,
       'x-amz-acl': 'public-read',
     },
-    body: buffer,
+    body: fileBuffer,
   })
 
   if (!putRes.ok) {
@@ -79,7 +107,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 4. Create Directus video record
-  const video = await createVideo({ title, filesize: file.size })
+  const video = await createVideo({ title, filesize: fileSize })
 
   const updates: Record<string, string> = {}
   if (sourceUrl) updates.source_url = sourceUrl
