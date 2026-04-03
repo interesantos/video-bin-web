@@ -10,7 +10,7 @@ export const PUBLIC_DIRECTUS_URL =
   process.env.NEXT_PUBLIC_DIRECTUS_URL ?? 'http://localhost:8055'
 
 // Storage management
-export const STORAGE_TOTAL_GB = 100
+export const STORAGE_TOTAL_GB = 10
 export const STORAGE_CLEANUP_THRESHOLD = 0.8 // trigger cleanup at 80%
 export const STORAGE_MAX_PROJECTS = 10
 

@@ -27,9 +27,9 @@ export function StorageIndicator({ refreshKey }: StorageIndicatorProps) {
 
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <div className="hidden sm:flex flex-col items-end text-xs leading-none">
+      <div className="flex flex-col items-end text-xs leading-none">
         <span className={cn('font-medium', textColor)}>
-          {usage.usedGB.toFixed(1)} / {usage.totalGB} GB
+          {usage.usedGB.toFixed(2)} / {usage.totalGB} GB
         </span>
         <span className="text-foreground/40 mt-0.5">{usage.videoCount} videos</span>
       </div>
