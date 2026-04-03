@@ -3,7 +3,7 @@
 # Git
 
 - **Repo**: `interesantos/video-bin` on GitHub.
-- **Pushing**: Always use `mcp__Github-General__push_files` to push. Never use `git push` via Bash.
+- **Pushing**: Use `git push` via Bash.
 
 # Project Stack
 
