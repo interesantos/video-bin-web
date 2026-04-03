@@ -102,14 +102,18 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Failed to upload to storage' }, { status: 502 })
   }
 
-  // 3. Poll Shotstack for the source URL (retry up to ~20s)
+  // 3. Poll Shotstack for the source URL + thumbnail (retry up to ~20s)
   let sourceUrl: string | undefined
+  let thumbnailUrl: string | undefined
   for (let i = 0; i < 10; i++) {
     try {
       const source = await getSource(ingestId)
       const attrs = source.data.attributes
       if (attrs.status === 'ready' && attrs.source) {
         sourceUrl = attrs.source
+        const renditions = attrs.outputs?.renditions ?? []
+        const thumb = renditions.find((r) => r.status === 'ready' && r.url && r.url.endsWith('.jpg'))
+        if (thumb?.url) thumbnailUrl = thumb.url
         break
       }
       if (attrs.status === 'failed') break
@@ -122,6 +126,7 @@ export async function POST(request: NextRequest) {
 
   const updates: Record<string, string> = {}
   if (sourceUrl) updates.source_url = sourceUrl
+  if (thumbnailUrl) updates.thumbnail_url = thumbnailUrl
   updates.ingest_id = ingestId
   await updateVideo(video.id, updates as Parameters<typeof updateVideo>[1])
 

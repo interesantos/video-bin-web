@@ -34,6 +34,7 @@ interface DirectusVideo {
   source_url: string | null
   ingest_id: string | null
   proxy_url: string | null
+  thumbnail_url: string | null
   date_created: string
   date_updated: string
 }
@@ -82,6 +83,7 @@ function toVideo(d: DirectusVideo): Video {
     error_message: d.error_message ?? undefined,
     ingest_id: d.ingest_id ?? undefined,
     proxy_url: d.proxy_url ?? undefined,
+    thumbnail_url: d.thumbnail_url ?? undefined,
     filesize: d.filesize ?? undefined,
     // Prefer source_url (Shotstack CDN), fall back to Directus file
     raw_file_url: d.source_url
@@ -190,7 +192,7 @@ export async function createVideo(data: {
 
 export async function updateVideo(
   id: string,
-  data: Partial<Pick<Video, 'title' | 'status' | 'template_id' | 'render_id' | 'error_message' | 'edited_file' | 'raw_file' | 'ingest_id' | 'proxy_url' | 'duration'> & { source_url: string }>
+  data: Partial<Pick<Video, 'title' | 'status' | 'template_id' | 'render_id' | 'error_message' | 'edited_file' | 'raw_file' | 'ingest_id' | 'proxy_url' | 'thumbnail_url' | 'duration'> & { source_url: string }>
 ): Promise<Video | undefined> {
   try {
     const item = await client.request(
