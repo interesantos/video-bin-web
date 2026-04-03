@@ -1,6 +1,6 @@
 import { type NextRequest } from 'next/server'
 import { createVideo, updateVideo } from '@/lib/directus'
-import { createUpload, getSource, ingestSource } from '@/lib/shotstack'
+import { createUpload, getSource, ingestSource, submitThumbnailRender, getRenderStatus } from '@/lib/shotstack'
 import { MAX_UPLOAD_SIZE_BYTES } from '@/lib/constants'
 
 /**
@@ -96,6 +96,24 @@ export async function POST(request: NextRequest) {
         } catch { /* non-blocking */ }
       })
       .catch((err) => console.error('Proxy ingest failed (non-blocking):', err))
+
+    // Generate thumbnail via Edit API (background)
+    submitThumbnailRender(sourceUrl)
+      .then(async (renderRes) => {
+        const renderId = renderRes.response.id
+        for (let i = 0; i < 15; i++) {
+          await new Promise((r) => setTimeout(r, 2000))
+          try {
+            const status = await getRenderStatus(renderId)
+            if (status.response.status === 'done' && status.response.url) {
+              await updateVideo(video.id, { thumbnail_url: status.response.url } as Parameters<typeof updateVideo>[1])
+              return
+            }
+            if (status.response.status === 'failed') return
+          } catch { /* retry */ }
+        }
+      })
+      .catch((err) => console.error('Thumbnail render failed:', err))
   }
 
   return Response.json(video, { status: 201 })
