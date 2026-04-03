@@ -138,16 +138,20 @@ export function StudioContainer({ video, initialTemplate }: StudioContainerProps
 
   // ── Render ────────────────────────────────────────────────────────────────
   const handleRender = useCallback(async () => {
-    if (!video) return
+    if (!video) {
+      console.error('Render failed: no video loaded')
+      return
+    }
 
-    // In mock mode: use a placeholder template
     let templateId: string
     if (isMockMode) {
-      // Submit directly with a dummy template — the mock store handles it
       templateId = initialTemplate?.id ?? 'mock-template'
     } else {
       const json = getTimeline()
-      if (!json) return
+      if (!json) {
+        console.error('Render failed: getTimeline() returned null')
+        return
+      }
       const saved = await createTemplate({
         name: `Render — ${video.title} — ${new Date().toISOString()}`,
         shotstack_json: json,
